@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ProfileCard() {
     var isFollowing by rememberSaveable { mutableStateOf(false) }
-    var followerCount by rememberSaveable { mutableIntStateOf(16) }
+    var followerCount by rememberSaveable { mutableIntStateOf(15) }
 
     val buttonColor by animateColorAsState(
         targetValue = if (isFollowing) Color.Gray else Color(0xFF1E3A8A),
