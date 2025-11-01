@@ -1,4 +1,4 @@
-package com.example.appprofile
+package com.example.appprofile.model
 
 data class Follower(
     val id: Int,
