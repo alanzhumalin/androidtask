@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.Alignment
 import com.example.appprofile.navigation.Screen
 import com.example.appprofile.presentation.ui.FollowerCard
@@ -28,10 +29,14 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel) {
             TopAppBar(
                 title = { Text(viewModel.name.value) },
                 actions = {
+                    IconButton(onClick = { viewModel.refreshFollowers() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
                     IconButton(onClick = { navController.navigate(Screen.EditProfile.route) }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
                     }
                 }
+
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -69,7 +74,7 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel) {
                         viewModel.removeFollower(follower)
                         scope.launch {
                             val result = snackbarHostState.showSnackbar(
-                                "${follower.name} removed",
+                                "${follower.name} unfollowed",
                                 actionLabel = "Undo"
                             )
                             if (result == SnackbarResult.ActionPerformed)
