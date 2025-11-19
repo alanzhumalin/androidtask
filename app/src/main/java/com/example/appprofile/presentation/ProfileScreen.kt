@@ -12,40 +12,58 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.PaddingValues
 import com.example.appprofile.navigation.Screen
 import com.example.appprofile.presentation.ui.FollowerCard
 import com.example.appprofile.presentation.ui.ProfileCard
 import com.example.appprofile.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.unit.LayoutDirection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel) {
+fun ProfileScreen(
+    navController: NavController,
+    viewModel: ProfileViewModel,
+    outerPadding: PaddingValues
+) {
+    val name by viewModel.name
+    val bio by viewModel.bio
+    val followers = viewModel.followers
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(viewModel.name.value) },
+                title = { Text(name) },
                 actions = {
                     IconButton(onClick = { viewModel.refreshFollowers() }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(onClick = { navController.navigate(Screen.EditProfile.route) }) {
+                    IconButton(onClick = {
+                        navController.navigate(Screen.EditProfile.route)
+                    }) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit Profile")
                     }
                 }
-
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
+    ) { innerPadding ->
+        val combined = PaddingValues(
+            top = innerPadding.calculateTopPadding(),
+            bottom = innerPadding.calculateBottomPadding() + outerPadding.calculateBottomPadding(),
+            start = innerPadding.calculateStartPadding(LayoutDirection.Ltr) + outerPadding.calculateStartPadding(LayoutDirection.Ltr),
+            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr) + outerPadding.calculateEndPadding(LayoutDirection.Ltr)
+        )
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(combined),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 Box(
@@ -55,20 +73,19 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel) {
                     contentAlignment = Alignment.Center
                 ) {
                     ProfileCard(
-                        name = viewModel.name.value,
-                        bio = viewModel.bio.value,
+                        name = name,
+                        bio = bio,
                         onFollow = {
                             scope.launch {
-                                snackbarHostState.showSnackbar("Followed ${viewModel.name.value}")
+                                snackbarHostState.showSnackbar("Followed $name")
                             }
                         }
                     )
                 }
             }
 
-
-            items(viewModel.followers, key = { it.id }) { follower ->
-                FollowerCard (
+            items(followers, key = { it.id }) { follower ->
+                FollowerCard(
                     follower = follower,
                     onUnfollow = {
                         viewModel.removeFollower(follower)
@@ -77,8 +94,9 @@ fun ProfileScreen(navController: NavController, viewModel: ProfileViewModel) {
                                 "${follower.name} unfollowed",
                                 actionLabel = "Undo"
                             )
-                            if (result == SnackbarResult.ActionPerformed)
+                            if (result == SnackbarResult.ActionPerformed) {
                                 viewModel.addFollower(follower)
+                            }
                         }
                     }
                 )

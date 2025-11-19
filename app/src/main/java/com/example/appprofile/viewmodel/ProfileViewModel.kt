@@ -1,16 +1,19 @@
 package com.example.appprofile.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.appprofile.model.Follower
 import com.example.appprofile.data.ProfileRepository
+import com.example.appprofile.model.Follower
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ProfileViewModel(app: Application) : AndroidViewModel(app) {
-    private val repository = ProfileRepository(app)
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val repository: ProfileRepository
+) : ViewModel() {
 
     var name = mutableStateOf("")
     var bio = mutableStateOf("")
@@ -25,11 +28,14 @@ class ProfileViewModel(app: Application) : AndroidViewModel(app) {
             val (savedName, savedBio) = repository.getProfileData()
             name.value = savedName
             bio.value = savedBio
+
             followers.clear()
             followers.addAll(repository.getFollowers())
+
             if (followers.isEmpty()) {
-                followers.addAll(repository.refreshFollowersFromApi())
-                repository.saveFollowers(followers)
+                val fresh = repository.refreshFollowersFromApi()
+                followers.addAll(fresh)
+                repository.saveFollowers(fresh)
             }
         }
     }

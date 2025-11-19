@@ -5,18 +5,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavController
 import com.example.appprofile.navigation.Screen
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, outerPadding: PaddingValues) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("Home") }) }
-    ) { padding ->
+    ) { innerPadding ->
+
+        val combined = PaddingValues(
+            top = innerPadding.calculateTopPadding(),
+            bottom = innerPadding.calculateBottomPadding() + outerPadding.calculateBottomPadding(),
+            start = innerPadding.calculateStartPadding(LayoutDirection.Ltr) +
+                    outerPadding.calculateStartPadding(LayoutDirection.Ltr),
+            end = innerPadding.calculateEndPadding(LayoutDirection.Ltr) +
+                    outerPadding.calculateEndPadding(LayoutDirection.Ltr)
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding),
+                .padding(combined),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

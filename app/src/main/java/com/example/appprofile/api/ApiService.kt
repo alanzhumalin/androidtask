@@ -1,5 +1,6 @@
 package com.example.appprofile.data.remote
 
+import com.example.appprofile.model.Post
 import retrofit2.http.GET
 
 data class UserResponse(
@@ -10,6 +11,9 @@ data class UserResponse(
 )
 
 interface ApiService {
+    @GET("posts")
+    suspend fun getPosts(): List<Post>
+
     @GET("users")
     suspend fun getUsers(): List<UserResponse>
 }

@@ -1,26 +1,27 @@
 package com.example.appprofile.data
 
-import android.content.Context
-import androidx.room.Room
 import com.example.appprofile.R
-import com.example.appprofile.data.local.*
-import com.example.appprofile.data.remote.RetrofitInstance
+import com.example.appprofile.data.local.AppDatabase
+import com.example.appprofile.data.local.FollowerEntity
+import com.example.appprofile.data.local.ProfileDao
+import com.example.appprofile.data.local.ProfileEntity
+import com.example.appprofile.data.remote.ApiService
 import com.example.appprofile.model.Follower
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ProfileRepository(context: Context) {
-    private val db = Room.databaseBuilder(
-        context,
-        AppDatabase::class.java,
-        "profile_db"
-    ).build()
-
-    private val dao = db.profileDao()
+@Singleton
+class ProfileRepository @Inject constructor(
+    private val api: ApiService,
+    private val dao: ProfileDao
+) {
 
     suspend fun getProfileData(): Pair<String, String> = withContext(Dispatchers.IO) {
         val profile = dao.getProfile()
-        profile?.let { it.name to it.bio } ?: ("Alan Zhumalin" to "Computer Science Student")
+        profile?.let { it.name to it.bio }
+            ?: ("Alan Zhumalin" to "Computer Science Student")
     }
 
     suspend fun getFollowers(): List<Follower> = withContext(Dispatchers.IO) {
@@ -35,13 +36,20 @@ class ProfileRepository(context: Context) {
 
     suspend fun saveFollowers(followers: List<Follower>) = withContext(Dispatchers.IO) {
         dao.clearFollowers()
-        dao.insertFollowers(followers.map {
-            FollowerEntity(it.id, it.name, it.avatarRes, it.isFollowing)
-        })
+        dao.insertFollowers(
+            followers.map {
+                FollowerEntity(
+                    id = it.id,
+                    name = it.name,
+                    avatarRes = it.avatarRes,
+                    isFollowing = it.isFollowing
+                )
+            }
+        )
     }
 
     suspend fun refreshFollowersFromApi(): List<Follower> = withContext(Dispatchers.IO) {
-        val users = RetrofitInstance.api.getUsers()
+        val users = api.getUsers()
         users.take(10).map {
             Follower(
                 id = it.id,
