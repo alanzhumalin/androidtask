@@ -2,7 +2,7 @@ package com.example.appprofile.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -39,7 +39,9 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(name) },
                 actions = {
-                    IconButton(onClick = { viewModel.refreshFollowers() }) {
+                    IconButton(onClick = {
+                        viewModel.refreshFollowers()
+                    }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
                     IconButton(onClick = {
@@ -79,27 +81,42 @@ fun ProfileScreen(
                             scope.launch {
                                 snackbarHostState.showSnackbar("Followed $name")
                             }
-                        }
+                        },
+                        isSyncing = viewModel.isSyncing.value,
+                        isFollowersLoading = viewModel.isFollowersLoading.value
                     )
                 }
             }
 
-            items(followers, key = { it.id }) { follower ->
-                FollowerCard(
-                    follower = follower,
-                    onUnfollow = {
-                        viewModel.removeFollower(follower)
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                "${follower.name} unfollowed",
-                                actionLabel = "Undo"
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.addFollower(follower)
+            if (viewModel.isFollowersLoading.value) {
+                items(4) { index ->
+                    FollowerCard(
+                        follower = null,
+                        onUnfollow = {},
+                        index = index,
+                        isPlaceholder = true
+                    )
+                }
+            } else {
+                itemsIndexed(followers, key = { _, it -> it.id }) { index, follower ->
+                    FollowerCard(
+                        follower = follower,
+                        onUnfollow = {
+                            viewModel.removeFollower(follower)
+                            scope.launch {
+                                val result = snackbarHostState.showSnackbar(
+                                    "${follower.name} unfollowed",
+                                    actionLabel = "Undo"
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    viewModel.addFollower(follower)
+                                }
                             }
-                        }
-                    }
-                )
+                        },
+                        index = index,
+                        isPlaceholder = false
+                    )
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.appprofile.data.ProfileRepository
 import com.example.appprofile.model.Follower
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +20,9 @@ class ProfileViewModel @Inject constructor(
     var bio = mutableStateOf("")
     var followers = mutableStateListOf<Follower>()
 
+    var isSyncing = mutableStateOf(false)
+    var isFollowersLoading = mutableStateOf(true)
+
     init {
         loadData()
     }
@@ -29,14 +33,18 @@ class ProfileViewModel @Inject constructor(
             name.value = savedName
             bio.value = savedBio
 
+            isFollowersLoading.value = true
             followers.clear()
-            followers.addAll(repository.getFollowers())
-
-            if (followers.isEmpty()) {
+            val savedFollowers = repository.getFollowers()
+            if (savedFollowers.isNotEmpty()) {
+                followers.addAll(savedFollowers)
+            } else {
                 val fresh = repository.refreshFollowersFromApi()
                 followers.addAll(fresh)
                 repository.saveFollowers(fresh)
             }
+            delay(150)
+            isFollowersLoading.value = false
         }
     }
 
@@ -64,10 +72,17 @@ class ProfileViewModel @Inject constructor(
 
     fun refreshFollowers() {
         viewModelScope.launch {
-            val newFollowers = repository.refreshFollowersFromApi()
+            isSyncing.value = true
+            isFollowersLoading.value = true
+
+            val fresh = repository.refreshFollowersFromApi()
             followers.clear()
-            followers.addAll(newFollowers)
-            repository.saveFollowers(newFollowers)
+            followers.addAll(fresh)
+            repository.saveFollowers(fresh)
+
+            delay(350)
+            isFollowersLoading.value = false
+            isSyncing.value = false
         }
     }
 }
