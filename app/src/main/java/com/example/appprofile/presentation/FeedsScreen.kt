@@ -36,7 +36,7 @@ fun FeedsScreen(viewModel: PostsViewModel, outerPadding: PaddingValues) {
                 .padding(combined),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(posts) { post ->
+            items(posts, key = { it.id }) { post ->
                 PostItem(post)
             }
         }

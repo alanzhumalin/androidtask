@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,17 +19,24 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.appprofile.R
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.unit.Dp
+import com.example.appprofile.LocalImageLoader
+
 @Composable
 fun ProfileCard(
     name: String,
     bio: String,
     onFollow: () -> Unit,
     isSyncing: Boolean,
-    isFollowersLoading: Boolean
+    isFollowersLoading: Boolean,
+    avatarRecompositions: MutableState<Int>
 ) {
     var isFollowing by rememberSaveable { mutableStateOf(false) }
     var followerCount by rememberSaveable { mutableIntStateOf(15) }
@@ -80,17 +88,12 @@ fun ProfileCard(
                                 )
                         )
                     } else {
-                        androidx.compose.foundation.Image(
-                            painter = painterResource(id = R.drawable.avatar),
-                            contentDescription = "Profile Picture",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(100.dp)
-                                .graphicsLayer {
-                                    scaleX = avatarScale
-                                    scaleY = avatarScale
-                                }
-                                .clip(CircleShape)
+                        AvatarImage(
+                            imageData = R.drawable.avatar,
+                            size = 100.dp,
+                            scale = avatarScale,
+                            onClick = {},
+                            avatarRecompositions = avatarRecompositions
                         )
                     }
 
@@ -179,40 +182,66 @@ fun ProfileCard(
     }
 }
 
+@Composable
+fun AvatarImage(
+    imageData: Any,
+    size: Dp,
+    scale: Float = 1f,
+    onClick: () -> Unit,
+    avatarRecompositions: MutableState<Int>
+) {
+    val imageLoader = LocalImageLoader.current
+    val context = LocalContext.current
+
+    val request = remember(imageData) {
+        ImageRequest.Builder(context)
+            .data(imageData)
+            .crossfade(true)
+            .build()
+    }
+
+    SideEffect {
+        avatarRecompositions.value += 1
+    }
+
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = request,
+            imageLoader = imageLoader,
+            contentDescription = "Profile Picture",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+        )
+    }
+}
 
 @Composable
 fun OnlineStatusIndicator(
     modifier: Modifier = Modifier,
-    visible: Boolean = true
+    visible: Boolean
 ) {
-    if (!visible) return
-
-    val pulse by rememberInfiniteTransition().animateFloat(
-        initialValue = 1f,
-        targetValue = 1.25f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(900, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
-
-    Box(
-        modifier = modifier
-            .size(26.dp)
-            .clip(CircleShape)
-            .background(Color.White)
-            .padding(6.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    AnimatedVisibility(visible = visible) {
         Box(
-            modifier = Modifier
-                .size(14.dp)
-                .graphicsLayer(
-                    scaleX = pulse,
-                    scaleY = pulse
-                )
+            modifier = modifier
+                .size(18.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF2ECC71))
+                .background(Color.Green)
+                .border(
+                    width = 3.dp,
+                    color = Color.White,
+                    shape = CircleShape
+                )
         )
     }
 }

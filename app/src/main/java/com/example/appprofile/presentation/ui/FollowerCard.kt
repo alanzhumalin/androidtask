@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,11 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.appprofile.model.Follower
 import kotlinx.coroutines.delay
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.ui.platform.LocalContext
+import com.example.appprofile.LocalImageLoader
+import com.example.appprofile.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +31,8 @@ fun FollowerCard(
     follower: Follower?,
     onUnfollow: () -> Unit,
     index: Int = 0,
-    isPlaceholder: Boolean = false
+    isPlaceholder: Boolean = false,
+    avatarRecompositions: MutableState<Int>
 ) {
     val hasAnimated = remember { mutableStateOf(follower?.appeared == true) }
     val offsetX = remember { Animatable(if (hasAnimated.value) 0f else 60f) }
@@ -116,8 +120,22 @@ fun FollowerCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = follower?.avatarRes ?: com.example.appprofile.R.drawable.avatar),
+                val imageLoader = LocalImageLoader.current
+                val ctx = LocalContext.current
+                val request = remember(follower?.avatarRes) {
+                    ImageRequest.Builder(ctx)
+                        .data(follower?.avatarRes ?: R.drawable.avatar)
+                        .crossfade(true)
+                        .build()
+                }
+
+                SideEffect {
+                    avatarRecompositions.value += 1
+                }
+
+                AsyncImage(
+                    model = request,
+                    imageLoader = imageLoader,
                     contentDescription = follower?.name ?: "avatar",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
